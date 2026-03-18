@@ -1,17 +1,15 @@
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
-import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 import { Octokit } from "@octokit/rest";
-import express from "express";
 
-const PORT = process.env.PORT || 3000;
-const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
+const GITHUB_TOKEN = process.env.GITHUB_PERSONAL_ACCESS_TOKEN;
 
 if (!GITHUB_TOKEN) {
-  console.error("GITHUB_TOKEN environment variable is required");
+  console.error("GITHUB_PERSONAL_ACCESS_TOKEN environment variable is required");
   process.exit(1);
 }
 
@@ -230,34 +228,5 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   }
 });
 
-const app = express();
-app.use(express.json());
-
-const transports = new Map<string, SSEServerTransport>();
-
-app.get("/sse", async (req, res) => {
-  const transport = new SSEServerTransport("/messages", res);
-  transports.set(transport.sessionId, transport);
-
-  res.on("close", () => {
-    transports.delete(transport.sessionId);
-  });
-
-  await server.connect(transport);
-});
-
-app.post("/messages", async (req, res) => {
-  const sessionId = req.query.sessionId as string;
-  const transport = transports.get(sessionId);
-
-  if (!transport) {
-    res.status(404).json({ error: "Session introuvable" });
-    return;
-  }
-
-  await transport.handlePostMessage(req, res);
-});
-
-app.listen(PORT, () => {
-  console.log(`MCP GitHub Milestones démarré sur http://localhost:${PORT}/sse`);
-});
+const transport = new StdioServerTransport();
+await server.connect(transport);
