@@ -48,7 +48,7 @@ docker build -t github-milestone-mcp .
 **Lancement du container :**
 
 ```bash
-docker run -e GITHUB_PERSONAL_ACCESS_TOKEN=ghp_xxxxxxxxxxxx github-milestone-mcp
+docker run -e GITHUB_PERSONAL_ACCESS_TOKEN github-milestone-mcp
 ```
 
 ## Intégration avec Claude Code
