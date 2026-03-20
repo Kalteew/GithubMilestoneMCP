@@ -2,8 +2,8 @@
   "mcpServers": {
     "github-milestone-mcp": {
       "type": "stdio",
-      "command": "npx",
-      "args": ["tsx", "src/index.ts"],
+      "command": "docker",
+      "args": ["run", "-i", "--rm", "-e", "GITHUB_PERSONAL_ACCESS_TOKEN", "github-milestone-mcp"],
       "env": {
         "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_PERSONAL_ACCESS_TOKEN}"
       }
