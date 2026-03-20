@@ -53,15 +53,32 @@ docker run -e GITHUB_PERSONAL_ACCESS_TOKEN github-milestone-mcp
 
 ## Intégration avec Claude Code
 
-Ajouter dans `.mcp.json` à la racine du projet :
+Il existe deux façons d'intégrer ce serveur MCP dans Claude Code.
+
+### Option 1 — Via Docker (recommandé)
+
+**1. Builder l'image Docker :**
+
+```bash
+docker build -t github-milestone-mcp .
+```
+
+**2. Ajouter la configuration dans `~/.claude.json`** (config globale, disponible dans tous les projets) :
 
 ```json
 {
   "mcpServers": {
     "github-milestone-mcp": {
       "type": "stdio",
-      "command": "npx",
-      "args": ["tsx", "src/index.ts"],
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "-e",
+        "GITHUB_PERSONAL_ACCESS_TOKEN",
+        "github-milestone-mcp"
+      ],
       "env": {
         "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_PERSONAL_ACCESS_TOKEN}"
       }
@@ -69,6 +86,53 @@ Ajouter dans `.mcp.json` à la racine du projet :
   }
 }
 ```
+
+> **Note :** La variable `GITHUB_PERSONAL_ACCESS_TOKEN` doit être définie dans l'environnement du shell qui lance Claude Code.
+
+### Option 2 — Via Node.js (sans Docker)
+
+Ajouter dans `.mcp.json` à la racine d'un projet :
+
+```json
+{
+  "mcpServers": {
+    "github-milestone-mcp": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["tsx", "/chemin/vers/GithubMilestoneMCP/src/index.ts"],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_PERSONAL_ACCESS_TOKEN}"
+      }
+    }
+  }
+}
+```
+
+### Nettoyage automatique du container (optionnel)
+
+Le container Docker est lancé avec `--rm`, mais il peut arriver qu'il reste actif si Claude Code est fermé brutalement. Pour le supprimer automatiquement à chaque arrêt de Claude Code, ajouter un hook `Stop` dans `~/.claude/settings.json` :
+
+```json
+{
+  "hooks": {
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "docker rm -f $(docker ps -q --filter ancestor=github-milestone-mcp) 2>/dev/null || true"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+### Vérification
+
+Une fois configuré, redémarrer Claude Code. Les outils `list_milestones`, `create_milestone`, etc. doivent apparaître comme disponibles.
 
 ## Outils disponibles
 
